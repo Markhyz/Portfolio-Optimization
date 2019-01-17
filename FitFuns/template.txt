@@ -1,0 +1,5 @@
+Optimization algorithm | Iterations | Log
+Individual arguments
+Fitness function | Pop size | Elite size
+Initialization args
+Selection args
