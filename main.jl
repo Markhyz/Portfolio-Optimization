@@ -38,7 +38,7 @@ function main(args)
     best_fit, mean_fit = GeneticAlgorithm.evolveSO!(ga, it, log)
     plot(1:it, [best_fit, mean_fit], xlims=(1, it), label=["Best" "Mean"], xlabel="Generation", ylabel="Fitness", legend=:bottomright)
   elseif opt_alg == "MULTI"
-    best_solutions = GeneticAlgorithm.evolveMO!(ga, it, log)
+    best_solutions = GeneticAlgorithm.evolveNSGA2!(ga, it, log)
     scatter([x .* Fitness.getDirection(fit_fun) for x in getindex.(best_solutions, 2)], label=["Frontier"], markersize=1)
   end
   savefig("FitFuns/$(args[1])_fitness.png")

@@ -1,6 +1,6 @@
-"MULTI" 1000 1
+"MULTI" 250 1
 RealIndividual.RealIndividualType{Float64} FitFuns.buildArgs(FitFuns.Zdt2Fit)
-FitFuns.Zdt2Fit() 200 50
+FitFuns.Zdt2Fit() 100 50
 GeneticAlgorithm.GAInitialization.InitRandom
 GeneticAlgorithm.GASelection.Tournament 2
 GeneticAlgorithm.GACrossover.AritmeticCrossover 0.95

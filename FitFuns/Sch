@@ -1,4 +1,4 @@
-"MULTI" 1000 1
+"MULTI" 250 1
 RealIndividual.RealIndividualType{Float64} FitFuns.buildArgs(FitFuns.SchFit,100)
 FitFuns.SchFit() 100 50
 GeneticAlgorithm.GAInitialization.InitRandom

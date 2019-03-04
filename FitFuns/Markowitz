@@ -1,6 +1,6 @@
-"MULTI" 1000 1
-RealIndividual.RealIndividualType{Float64} FitFuns.buildArgs(FitFuns.MarkowitzFit,225)
-FitFuns.MarkowitzFit("Markowitz/port5") 100 50
+"MULTI" 250 1
+RealIndividual.RealIndividualType{Float64} FitFuns.buildArgs(FitFuns.MarkowitzFit,89)
+FitFuns.MarkowitzFit("Markowitz/port3") 200 50
 GeneticAlgorithm.GAInitialization.InitRandomOne
 GeneticAlgorithm.GASelection.Tournament 2
 GeneticAlgorithm.GACrossover.AritmeticCrossover 0.95
