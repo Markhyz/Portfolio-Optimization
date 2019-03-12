@@ -2,7 +2,7 @@ push!(LOAD_PATH, ".")
 push!(LOAD_PATH, "../Genetic Algorithm")
 
 using GeneticAlgorithm
-using RealIndividual
+using RealChromosome
 using FitFuns
 using Fitness
 using Plots

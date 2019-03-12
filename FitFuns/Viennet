@@ -1,5 +1,5 @@
 "MULTI" 250 1
-RealIndividual.RealIndividualType{Float64} FitFuns.buildArgs(FitFuns.ViennetFit)
+RealChromosome.RealChromosomeType{Float64} FitFuns.buildArgs(FitFuns.ViennetFit)
 FitFuns.ViennetFit() 100 50
 GeneticAlgorithm.GAInitialization.InitRandom
 GeneticAlgorithm.GASelection.Tournament 2

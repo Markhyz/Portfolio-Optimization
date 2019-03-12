@@ -1,5 +1,5 @@
 Optimization algorithm | Iterations | Log
-Individual arguments
+Chromosome arguments
 Fitness function | Pop size | Elite size
 Initialization args
 Selection args
