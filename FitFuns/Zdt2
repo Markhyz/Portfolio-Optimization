@@ -1,7 +1,8 @@
-"MULTI" 250 1
-RealChromosome.RealChromosomeType{Float64} FitFuns.buildArgs(FitFuns.Zdt2Fit)
+"MULTI" 500 1
 FitFuns.Zdt2Fit() 100 50
-GeneticAlgorithm.GAInitialization.InitRandom
 GeneticAlgorithm.GASelection.Tournament 2
+1
+RealChromosome.RealChromosomeType{Float64} FitFuns.buildArgs(FitFuns.Zdt2Fit)
+GeneticAlgorithm.GAInitialization.InitRandom
 GeneticAlgorithm.GACrossover.AritmeticCrossover 0.95
 GeneticAlgorithm.GAMutation.UniformMutation 0.05 0.0 1.0

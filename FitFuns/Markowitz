@@ -1,7 +1,8 @@
 "MULTI" 250 1
-RealChromosome.RealChromosomeType{Float64} FitFuns.buildArgs(FitFuns.MarkowitzFit,89)
 FitFuns.MarkowitzFit("Markowitz/port3") 200 50
-GeneticAlgorithm.GAInitialization.InitRandomOne
 GeneticAlgorithm.GASelection.Tournament 2
+1
+RealChromosome.RealChromosomeType{Float64} FitFuns.buildArgs(FitFuns.MarkowitzFit,89)
+GeneticAlgorithm.GAInitialization.InitRandomOne
 GeneticAlgorithm.GACrossover.AritmeticCrossover 0.95
 GeneticAlgorithm.GAMutation.SwapMutation 0.05

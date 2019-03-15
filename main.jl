@@ -16,18 +16,25 @@ end
 function readArgs(filename::String)
   open(filename, "r") do file
     opt_algo, it, log = evalLine(readline(file))
-    ind_args = evalLine(readline(file))
     fit_fun, pop_size, elite_size = evalLine(readline(file))
-    init_args = evalLine(readline(file))
     sel_args = evalLine(readline(file))
-    cross_args = evalLine(readline(file))
-    mut_args = evalLine(readline(file))
-    return opt_algo, it, log, ind_args, fit_fun, pop_size, elite_size, init_args, sel_args, cross_args, mut_args
+    chromo_num = evalLine(readline(file))[1]
+    ind_args = Array{Any}(undef, chromo_num)
+    init_args = Array{Any}(undef, chromo_num)
+    cross_args = Array{Any}(undef, chromo_num)
+    mut_args = Array{Any}(undef, chromo_num)
+    for i = 1 : chromo_num
+      ind_args[i] = evalLine(readline(file))
+      init_args[i] = evalLine(readline(file))
+      cross_args[i] = evalLine(readline(file))
+      mut_args[i] = evalLine(readline(file))
+    end
+    return opt_algo, it, log, fit_fun, pop_size, elite_size, sel_args, tuple(ind_args...), tuple(init_args...), tuple(cross_args...), tuple(mut_args...)
   end
 end
 
 function main(args)
-  opt_alg, it, log, ind_args, fit_fun, pop_size, elite_size, init_args, sel_args, cross_args, mut_args = readArgs("FitFuns/$(args[1])")
+  opt_alg, it, log, fit_fun, pop_size, elite_size, sel_args, ind_args, init_args, cross_args, mut_args = readArgs("FitFuns/$(args[1])")
   ga = GeneticAlgorithm.GeneticAlgorithmType(ind_args, fit_fun, pop_size, elite_size;
                                             init_args = init_args,
                                             sel_args = sel_args,

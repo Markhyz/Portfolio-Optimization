@@ -43,9 +43,9 @@ struct AckleyFit <: Fitness.AbstractFitness{1}
     new((-1,))
   end
 end
-function (::AckleyFit)(x::RealChromosome.AbstractRealChromosome)
-  a, b, c, d = 20.0, 0.2, 2π, Chromosome.getNumGenes(x)
-  s1, s2 = foldl(((x1, x2), y) -> (x1 + y ^ 2, x2 + cos(c * y)), x; init = (0, 0))
+function (::AckleyFit)(x::Tuple{RealChromosome.AbstractRealChromosome})
+  a, b, c, d = 20.0, 0.2, 2π, Chromosome.getNumGenes(x[1])
+  s1, s2 = foldl(((x1, x2), y) -> (x1 + y ^ 2, x2 + cos(c * y)), x[1]; init = (0, 0))
   res = -a * exp(-b * sqrt((1 / d) * s1)) - exp((1 / d) * s2) + a + exp(1.0)
   return (-res,)
 end
@@ -60,9 +60,9 @@ struct SchFit <: Fitness.AbstractFitness{2}
     new((-1, -1))
   end
 end
-function (::SchFit)(x::RealChromosome.AbstractRealChromosome)
-  res1 = x[1] ^ 2
-  res2 = (x[1] - 2) ^ 2
+function (::SchFit)(x::Tuple{RealChromosome.AbstractRealChromosome})
+  res1 = x[1][1] ^ 2
+  res2 = (x[1][1] - 2) ^ 2
   return (-res1, -res2)
 end
 function buildArgs(::Type{SchFit}, x::Real)
@@ -76,13 +76,13 @@ struct KurFit <: Fitness.AbstractFitness{2}
     new((-1, -1))
   end
 end
-function (::KurFit)(x::RealChromosome.AbstractRealChromosome)
+function (::KurFit)(x::Tuple{RealChromosome.AbstractRealChromosome})
   res1 = 0.0
   res2 = 0.0
-  for i = 1:(length(x) - 1)
-    res1 += -10 * exp(-0.2 * sqrt(x[i] ^ 2 + x[i + 1] ^ 2)) 
+  for i = 1:(length(x[1]) - 1)
+    res1 += -10 * exp(-0.2 * sqrt(x[1][i] ^ 2 + x[1][i + 1] ^ 2)) 
   end
-  for gene in x
+  for gene in x[1]
     res2 += abs(gene) ^ 0.8 + 5 * sin(gene ^ 3)
   end 
   return (-res1, -res2)
@@ -98,10 +98,10 @@ struct Zdt2Fit <: Fitness.AbstractFitness{2}
     new((-1, -1))
   end
 end
-function (::Zdt2Fit)(x::Chromosome.AbstractChromosome)
-  res1 = x[1]
-  k = 1 + 9 * sum(@view x[2:end]) / (Chromosome.getNumGenes(x) - 1)
-  res2 = k * (1 - (x[1] / k) ^ 2)
+function (::Zdt2Fit)(x::Tuple{Chromosome.AbstractChromosome})
+  res1 = x[1][1]
+  k = 1 + 9 * sum(@view x[1][2:end]) / (Chromosome.getNumGenes(x[1]) - 1)
+  res2 = k * (1 - (x[1][1] / k) ^ 2)
   return (-res1, -res2)
 end
 function buildArgs(::Type{Zdt2Fit})
@@ -115,8 +115,8 @@ struct ViennetFit <: Fitness.AbstractFitness{3}
     new((-1, -1, -1))
   end
 end
-function (::ViennetFit)(v::Chromosome.AbstractChromosome)
-  x, y = v[1], v[2]
+function (::ViennetFit)(v::Tuple{Chromosome.AbstractChromosome})
+  x, y = v[1][1], v[1][2]
   res1 = 0.5 * (x ^ 2 + y ^ 2) + sin(x ^ 2 + y ^ 2)
   res2 = ((3 * x - 2 * y + 4) ^ 2) / 8 + ((x - y + 1) ^ 2) / 27 + 15
   res3 = 1 / (x ^ 2 + y ^ 2 + 1) - 1.1 * exp(-(x ^ 2 + y ^ 2))
@@ -133,10 +133,10 @@ struct Zdt3Fit <: Fitness.AbstractFitness{2}
     new((-1, -1))
   end
 end
-function (::Zdt3Fit)(x::Chromosome.AbstractChromosome)
-  res1 = x[1]
-  g = 1 + 9 * sum(@view x[2:end]) / (Chromosome.getNumGenes(x) - 1)
-  h = 1 - sqrt(x[1] / g) - (x[1] / g) * sin(10 * π * x[1])
+function (::Zdt3Fit)(x::Tuple{Chromosome.AbstractChromosome})
+  res1 = x[1][1]
+  g = 1 + 9 * sum(@view x[1][2:end]) / (Chromosome.getNumGenes(x[1]) - 1)
+  h = 1 - sqrt(x[1][1] / g) - (x[1][1] / g) * sin(10 * π * x[1][1])
   res2 = g * h
   return (-res1, -res2)
 end
@@ -172,11 +172,18 @@ struct MarkowitzFit <: Fitness.AbstractFitness{2}
     end
   end
 end
-function (fit::MarkowitzFit)(x::RealChromosome.RealChromosomeType)
-  mean = fit.μ ⋅ x
+function (fit::MarkowitzFit)(x::Tuple{RealChromosome.RealChromosomeType})
+  total_x = sum(x[1])
+  n_x = [ x_i / total_x for x_i in x[1] ]
+  if abs(sum(n_x) - 1.0) > 1e-9
+    println("NANI", sum(n_x))
+    exit()
+  end
+  chromo_num = Chromosome.getNumGenes(x[1])
+  mean = fit.μ ⋅ n_x
   var = 0.0
-  for i = 1:Chromosome.getNumGenes(x), j = 1:Chromosome.getNumGenes(x)
-    var = var + x[i] * x[j] * fit.σ[i, j]
+  for i = 1:chromo_num, j = 1:chromo_num
+    var = var + n_x[i] * n_x[j] * fit.σ[i, j]
   end
   #var = foldl((total, i) -> total + x[i] * (fit.σ[i, :] ⋅ x), 1:Chromosome.getNumGenes(x))
   return (mean, -var)

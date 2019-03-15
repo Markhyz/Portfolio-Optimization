@@ -1,5 +1,8 @@
 Optimization algorithm | Iterations | Log
-Chromosome arguments
 Fitness function | Pop size | Elite size
 Initialization args
 Selection args
+Number of Chromosomes
+  Chromosome constructor
+  Crossover arg
+  Mutation arg
