@@ -3,9 +3,11 @@ push!(LOAD_PATH, "../Genetic Algorithm")
 
 using GeneticAlgorithm
 using RealChromosome
+using BinaryChromosome
 using FitFuns
 using Fitness
 using Plots
+using Random
 
 function evalLine(line::String)
   evaluated_line = map(x -> eval(Meta.parse(x)), split(line))
@@ -47,8 +49,13 @@ function main(args)
   elseif opt_alg == "MULTI"
     best_solutions = GeneticAlgorithm.evolveNSGA2!(ga, it, log)
     scatter([x .* Fitness.getDirection(fit_fun) for x in getindex.(best_solutions, 2)], label=["Frontier"], markersize=1)
+  elseif opt_alg == "PO"
+    best_solutions = GeneticAlgorithm.evolveNSGA2PO!(ga, it, log)
+    scatter([x .* Fitness.getDirection(fit_fun) for x in getindex.(best_solutions, 2)], label=["Frontier"], markersize=1)
   end
   savefig("FitFuns/$(args[1])_fitness.png")
 end
+
+Random.seed!(trunc(Int64, time()))
 
 main(ARGS)
