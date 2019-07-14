@@ -4,6 +4,7 @@ push!(LOAD_PATH, "../Genetic Algorithm")
 using GeneticAlgorithm
 using RealChromosome
 using BinaryChromosome
+using CardinalityChromosome
 using FitFuns
 using Fitness
 using Plots

@@ -1,5 +1,5 @@
-"PO" 300 1
-FitFuns.MCvarCardFit("Ibovespa/2010/input",9,0.95,"2010-01-01","2010-12-31") 500 0
+"PO" 500 1
+FitFuns.MCvarCardFit("Ibovespa/2015/input",9,0.95,"2015-01-01","2015-12-31") 500 0
 GeneticAlgorithm.GASelection.Tournament 2
 2
 BinaryChromosome.BinaryChromosomeType FitFuns.buildArgs(FitFuns.MCvarCardFit,BinaryChromosome.BinaryChromosomeType)
