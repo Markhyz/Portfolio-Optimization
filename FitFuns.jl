@@ -3,11 +3,13 @@ push!(LOAD_PATH, "../Genetic Algorithm")
 module FitFuns
 
 using LinearAlgebra
+using StatsKit
 
 using Fitness
 using Chromosome
 using RealChromosome
 using BinaryChromosome
+using CardinalityChromosome
 
 struct NullFit <: Fitness.AbstractFitness{1}
   Fitness.@Fitness
@@ -193,92 +195,74 @@ function buildArgs(::Type{MarkowitzFit}, n::Integer)
 end
 
 MCvarCardFit_n = -1
+MCvarCardFit_k = -1
 
 struct MCvarCardFit <: Fitness.AbstractFitness{2}
   Fitness.@Fitness
 
-  μ::Vector{Float64}
   r::Matrix{Float64}
+  μ::Vector{Float64}
   β::Float64
   k::Integer
   n::Integer
+  t::Integer
 
-  function MCvarCardFit(dir::String, k::Integer, β::Float64, range_start::String, range_end::String)
-    let μ, r, n
+  function MCvarCardFit(dir::String, k::Integer, β::Float64)
+    let μ, r, n, t
+      asset_returns = []
       for (root, dirs, files) in walkdir(dir)
         n = length(files)
-        assets_returns = Dict{String, Vector{Tuple{Float64, Int64}}}()
-        i = 1
         for file in files
-          open("$dir/$file", "r") do f
-            for line in eachline(f)
-              values = split(line, " ")
-              date, ret = values[1], parse(Float64, values[2])
-              if date > range_end
-                break
-              elseif date >= range_start
-                try
-                  push!(assets_returns[date], (ret, i))
-                catch err
-                  assets_returns[date] = []
-                  push!(assets_returns[date], (ret, i))
-                end
-              end
+          returns = []
+          open("$dir/$file", "r") do asset_file
+            for line in eachline(asset_file)
+              ret = parse(Float64, line)
+              push!(returns, ret)
             end
           end
-          i = i + 1
-        end
-        x = length(assets_returns)
-        history_returns = zeros((n, x))
-        for (i, key) in enumerate(sort(collect(keys(assets_returns))))
-          for (value, j) in assets_returns[key]
-            history_returns[j, i] = value
-          end
-        end
-        for i = 1 : n
-          for j = 1 : x
-            if history_returns[i, j] == 0.0
-              history_returns[i, j] = history_returns[i, j - 1 > 0 ? j - 1 : j + 1]
-            end
-          end
-        end
-        r = Matrix{Float64}(undef, n, x - 1)
-        for i = 1 : n
-          for j = 2 : x
-            r[i, j - 1] = log(history_returns[i, j]) - log(history_returns[i, j - 1])
-          end
+          t = length(returns)
+          push!(asset_returns, returns)
         end
         break
       end
-      μ = [sum(r[i, :]) / length(axes(r, 2)) for i in axes(r, 1)]
+      r = Matrix{Float64}(undef, t, n)
+      for i in eachindex(asset_returns)
+        returns = asset_returns[i]
+        for j in eachindex(returns)
+          r[j, i] = returns[j]
+        end
+      end
+      μ = map(mean, asset_returns)
       global MCvarCardFit_n = n
-      return new((-1, 1), μ, r, 1 - β, k, n)
+      global MCvarCardFit_k = k
+      return new((-1, 1), r, μ, 1 - β, k, n, t)
     end
   end
 end
-function (fit::MCvarCardFit)(x::Tuple{BinaryChromosome.BinaryChromosomeType, RealChromosome.RealChromosomeType})
-  w = [ x[1][i] == 1 ? x[2][i] : 0 for i in eachindex(x[1])]
-  total_x = sum(w)
-  n_w = [ x_i / total_x for x_i in w ]
-  
-  if abs(sum(n_w) - 1.0) > 1e-9
-    println("NANI", sum(n_w))
+function (fit::MCvarCardFit)(_x::Tuple{CardinalityChromosome.CardinalityChromosomeType})
+  x = _x[1]
+  total_w = sum(((idx, w),) -> w, x)
+  if abs(total_w - 1.0) > 1e-9
+    println("NANI", total_w)
     exit()
   end
   
-  mean = fit.μ ⋅ n_w
-  returns = []
-  for t in axes(fit.r, 2)
-    push!(returns, fit.r[:, t] ⋅ n_w)
+  mean = sum(((idx, w),) -> w * fit.μ[idx], x)
+  returns = Float64[]
+  for i = 1 : fit.t
+    push!(returns, sum(((idx, w),) -> w * fit.r[i, idx], x))
   end
   sort!(returns)
-  T = Int(ceil(fit.β * length(axes(fit.r, 2))))
+  T = Int(ceil(fit.β * fit.t))
   cvar = 0.0
   for i = 1 : T
     cvar = cvar - returns[i]
   end
   cvar = cvar / T 
   return (-cvar, mean)
+end
+function buildArgs(::Type{MCvarCardFit}, ::Type{CardinalityChromosome.CardinalityChromosomeType})
+  return (MCvarCardFit_n, MCvarCardFit_k, fill(((1, 0.0), (MCvarCardFit_n, 1.0)), MCvarCardFit_k))
 end
 function buildArgs(::Type{MCvarCardFit}, ::Type{BinaryChromosome.BinaryChromosomeType})
   return (MCvarCardFit_n, )

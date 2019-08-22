@@ -1,12 +1,8 @@
-"PO" 500 1
-FitFuns.MCvarCardFit("Ibovespa/2015/input",9,0.95,"2015-01-01","2015-12-31") 500 0
+"MULTI" 250 1
+FitFuns.MCvarCardFit("Ibovespa/2015_2018/assets_input",9,0.95) 200 0
 GeneticAlgorithm.GASelection.Tournament 2
-2
-BinaryChromosome.BinaryChromosomeType FitFuns.buildArgs(FitFuns.MCvarCardFit,BinaryChromosome.BinaryChromosomeType)
+1
+CardinalityChromosome.CardinalityChromosomeType FitFuns.buildArgs(FitFuns.MCvarCardFit,CardinalityChromosome.CardinalityChromosomeType)
 GeneticAlgorithm.GAInitialization.InitRandom
-GeneticAlgorithm.GACrossover.UniformPOCrossover 0.95
-GeneticAlgorithm.GAMutation.BitFlipMutation 0.05
-RealChromosome.RealChromosomeType{Float64} FitFuns.buildArgs(FitFuns.MCvarCardFit,RealChromosome.RealChromosomeType)
-GeneticAlgorithm.GAInitialization.InitRandom
-GeneticAlgorithm.GACrossover.AritmeticCrossover 0.95
-GeneticAlgorithm.GAMutation.GaussMutation 0.05 0.05
+GeneticAlgorithm.GACrossover.CardinalityPOCrossover 0.95
+GeneticAlgorithm.GAMutation.CardinalityPOMutation 0.05

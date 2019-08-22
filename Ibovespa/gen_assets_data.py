@@ -3,7 +3,6 @@ import csv
 import sys
 import os
 import math
-
 startDate = date.fromisoformat(sys.argv[1])
 endDate = date.fromisoformat(sys.argv[2])
 
