@@ -4,8 +4,10 @@ module FitFuns
 
 using LinearAlgebra
 using StatsKit
+using Printf
 
 using Fitness
+using Population
 using Chromosome
 using RealChromosome
 using BinaryChromosome
@@ -206,13 +208,20 @@ struct MCvarCardFit <: Fitness.AbstractFitness{2}
   k::Integer
   n::Integer
   t::Integer
+  assets::Vector{String}
 
   function MCvarCardFit(dir::String, k::Integer, β::Float64)
-    let μ, r, n, t
+    let μ, r, n, t, assets
       asset_returns = []
+      assets = []
       for (root, dirs, files) in walkdir(dir)
-        n = length(files)
+        n = 0
         for file in files
+          if !occursin(r".in$", file)
+            continue
+          end
+          push!(assets, replace(file, ".in" => ""))
+          n += 1
           returns = []
           open("$dir/$file", "r") do asset_file
             for line in eachline(asset_file)
@@ -235,7 +244,7 @@ struct MCvarCardFit <: Fitness.AbstractFitness{2}
       μ = map(mean, asset_returns)
       global MCvarCardFit_n = n
       global MCvarCardFit_k = k
-      return new((-1, 1), r, μ, 1 - β, k, n, t)
+      return new((-1, 1), r, μ, 1 - β, k, n, t, assets)
     end
   end
 end
@@ -269,6 +278,30 @@ function buildArgs(::Type{MCvarCardFit}, ::Type{BinaryChromosome.BinaryChromosom
 end
 function buildArgs(::Type{MCvarCardFit}, ::Type{RealChromosome.RealChromosomeType})
   return (MCvarCardFit_n, fill((0.0, 1.0), MCvarCardFit_n))
+end
+function output(fit::MCvarCardFit, sol::Vector{Population.StandardFit{<: Population.IndividualType}}, sol_fitness::Vector{Tuple{Float64, Float64}}, output_name::String)
+  sol_assets = map((((chromo,),),) -> getindex.(chromo, 1), sol)
+  sol_weights = map((((chromo,),),) -> getindex.(chromo, 2), sol)
+  open("$(output_name).ind", "w") do out_file
+    for i in eachindex(sol)
+      for asset in sol_assets[i]
+        print(out_file, fit.assets[asset], " ")
+      end
+      println(out_file)
+      for weight in sol_weights[i]
+        @printf(out_file, "%.9f ", weight)
+      end
+      println(out_file)
+    end
+  end
+  open("$(output_name).fit", "w") do out_file
+    for i in eachindex(sol)
+      for fit in sol_fitness[i]
+        @printf(out_file, "%.9f ", fit)
+      end
+      println(out_file)
+    end
+  end
 end
 
 end

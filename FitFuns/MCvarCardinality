@@ -1,5 +1,4 @@
-"MULTI" 250 1
-FitFuns.MCvarCardFit("Ibovespa/2015_2018/assets_input",9,0.95) 200 0
+FitFuns.MCvarCardFit("Ibovespa/2015_2017/assets_data",15,0.95) 500 0
 GeneticAlgorithm.GASelection.Tournament 2
 1
 CardinalityChromosome.CardinalityChromosomeType FitFuns.buildArgs(FitFuns.MCvarCardFit,CardinalityChromosome.CardinalityChromosomeType)
