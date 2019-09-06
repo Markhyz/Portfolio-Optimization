@@ -196,8 +196,8 @@ function buildArgs(::Type{MarkowitzFit}, n::Integer)
   return (n, fill((0.0, 1.0), n))
 end
 
-MCvarCardFit_n = -1
-MCvarCardFit_k = -1
+card_n = -1
+card_k = -1
 
 struct MCvarCardFit <: Fitness.AbstractFitness{2}
   Fitness.@Fitness
@@ -242,8 +242,8 @@ struct MCvarCardFit <: Fitness.AbstractFitness{2}
         end
       end
       μ = map(mean, asset_returns)
-      global MCvarCardFit_n = n
-      global MCvarCardFit_k = k
+      global card_n = n
+      global card_k = k
       return new((-1, 1), r, μ, 1 - β, k, n, t, assets)
     end
   end
@@ -271,15 +271,110 @@ function (fit::MCvarCardFit)(_x::Tuple{CardinalityChromosome.CardinalityChromoso
   return (-cvar, mean)
 end
 function buildArgs(::Type{MCvarCardFit}, ::Type{CardinalityChromosome.CardinalityChromosomeType})
-  return (MCvarCardFit_n, MCvarCardFit_k, fill(((1, 0.0), (MCvarCardFit_n, 1.0)), MCvarCardFit_k))
+  return (card_n, card_k, fill(((1, 0.0), (card_n, 1.0)), card_k))
 end
 function buildArgs(::Type{MCvarCardFit}, ::Type{BinaryChromosome.BinaryChromosomeType})
-  return (MCvarCardFit_n, )
+  return (card_n, )
 end
 function buildArgs(::Type{MCvarCardFit}, ::Type{RealChromosome.RealChromosomeType})
-  return (MCvarCardFit_n, fill((0.0, 1.0), MCvarCardFit_n))
+  return (card_n, fill((0.0, 1.0), card_n))
 end
 function output(fit::MCvarCardFit, sol::Vector{Population.StandardFit{<: Population.IndividualType}}, sol_fitness::Vector{Tuple{Float64, Float64}}, output_name::String)
+  sol_assets = map((((chromo,),),) -> getindex.(chromo, 1), sol)
+  sol_weights = map((((chromo,),),) -> getindex.(chromo, 2), sol)
+  open("$(output_name).ind", "w") do out_file
+    for i in eachindex(sol)
+      for asset in sol_assets[i]
+        print(out_file, fit.assets[asset], " ")
+      end
+      println(out_file)
+      for weight in sol_weights[i]
+        @printf(out_file, "%.9f ", weight)
+      end
+      println(out_file)
+    end
+  end
+  open("$(output_name).fit", "w") do out_file
+    for i in eachindex(sol)
+      for fit in sol_fitness[i]
+        @printf(out_file, "%.9f ", fit)
+      end
+      println(out_file)
+    end
+  end
+end
+
+struct MeanVarianceCardFit <: Fitness.AbstractFitness{2}
+  Fitness.@Fitness
+
+  μ::Vector{Float64}
+  σ::Matrix{Float64}
+  n::Integer
+  k::Integer
+  assets::Vector{String}
+
+  function MeanVarianceCardFit(dir::String, k::Integer, β::Float64)
+    let μ, σ, n, t, assets
+      asset_returns = []
+      assets = []
+      for (root, dirs, files) in walkdir(dir)
+        n = 0
+        for file in files
+          if !occursin(r".in$", file)
+            continue
+          end
+          push!(assets, replace(file, ".in" => ""))
+          n += 1
+          returns = []
+          open("$dir/$file", "r") do asset_file
+            for line in eachline(asset_file)
+              ret = parse(Float64, line)
+              push!(returns, ret)
+            end
+          end
+          t = length(returns)
+          push!(asset_returns, returns)
+        end
+        break
+      end
+      μ = map(mean, asset_returns)
+      σ = Matrix{Float64}(undef, n, n)
+      for i = 1 : n
+        for j = 1 : n
+          total = 0.0
+          for h = 1 : t
+            total = total + (μ[i] - asset_returns[i][h]) * (μ[j] - asset_returns[j][h])
+          end
+          σ[i, j] = total / (t - 1)
+        end
+      end
+      global card_n = n
+      global card_k = k
+      return new((-1, 1), μ, σ, n, k, assets)
+    end
+  end
+end
+function (fit::MeanVarianceCardFit)(_x::Tuple{CardinalityChromosome.CardinalityChromosomeType})
+  x = _x[1]
+  total_w = sum(((idx, w),) -> w, x)
+  if abs(total_w - 1.0) > 1e-9
+    println("NANI", total_w)
+    exit()
+  end
+  
+  mean = sum(((idx, w),) -> w * fit.μ[idx], x)
+  variance = 0.0
+  for (asset, weight) in x
+    for (asset2, weight2) in x
+      variance = variance + fit.σ[asset, asset2] * weight * weight2
+    end
+  end
+  return (-variance, mean)
+end
+function buildArgs(::Type{MeanVarianceCardFit}, ::Type{CardinalityChromosome.CardinalityChromosomeType})
+  return (card_n, card_k, fill(((1, 0.0), (card_n, 1.0)), card_k))
+end
+function output(fit::MeanVarianceCardFit, sol::Vector{Population.StandardFit{<: Population.IndividualType}}, sol_fitness::Vector{Tuple{Float64, Float64}}, output_name::String)
   sol_assets = map((((chromo,),),) -> getindex.(chromo, 1), sol)
   sol_weights = map((((chromo,),),) -> getindex.(chromo, 2), sol)
   open("$(output_name).ind", "w") do out_file

@@ -3,8 +3,9 @@
 set -e
 
 DIR="$1"
-START_YEAR="$2"
-END_YEAR="$3"
+NAME="$2"
+START_YEAR="$3"
+END_YEAR="$4"
 
 PERIOD_DIR="${DIR}/${START_YEAR}_${END_YEAR}"
 
@@ -29,10 +30,10 @@ printf "Generated cdi data (cdi.inp)\n"
 python "${DIR}/scripts/gen_benchmark_returns.py" "${PERIOD_DIR}/benchmark_data" "${PERIOD_DIR}/benchmark_data" "${START_YEAR}-01-01" "${END_YEAR}-12-31"
 
 printf "\nGenerating benchmark plot\n"
-mkdir -p "${PERIOD_DIR}/plot_data"
-rm -f "${PERIOD_DIR}/plot_data/*"
-python "${DIR}/scripts/gen_plot_data.py" "${PERIOD_DIR}/benchmark_data/^BVSP.ret" "${PERIOD_DIR}/plot_data/bvsp.dat" Ibovespa
+mkdir -p "${PERIOD_DIR}/plot_data/${NAME}"
+
+python "${DIR}/scripts/gen_plot_data.py" "${PERIOD_DIR}/benchmark_data/^BVSP.ret" "${PERIOD_DIR}/plot_data/${NAME}/bvsp.dat" Ibovespa
 printf "Generated ibovespa plot (bvsp.dat)\n"
 
-python "${DIR}/scripts/gen_plot_data.py" "${PERIOD_DIR}/benchmark_data/cdi.ret" "${PERIOD_DIR}/plot_data/cdi.dat" CDI
+python "${DIR}/scripts/gen_plot_data.py" "${PERIOD_DIR}/benchmark_data/cdi.ret" "${PERIOD_DIR}/plot_data/${NAME}/cdi.dat" CDI
 printf "Generated cdi plot (cdi.dat)\n"

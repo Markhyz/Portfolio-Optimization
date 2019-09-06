@@ -3,10 +3,11 @@ import sys
 
 portfolio_ind = sys.argv[1]
 portfolio_fit = sys.argv[2]
-assets_dir = sys.argv[3]
-output_dir = sys.argv[4]
-start_date = date.fromisoformat(sys.argv[5])
-end_date = date.fromisoformat(sys.argv[6])
+selection = int(sys.argv[3]) - 1
+assets_dir = sys.argv[4]
+output_dir = sys.argv[5]
+start_date = date.fromisoformat(sys.argv[6])
+end_date = date.fromisoformat(sys.argv[7])
 
 portfolio_assets = []
 
@@ -52,44 +53,15 @@ def generatePortfolioReturns(assets):
     cur_date += timedelta(days=1)
   return returns
 
-risky_portfolio, r, r_idx = [], -1e9, 0
-safe_portfolio, s, s_idx = [], 1e9, 0
-balanced_portfolio, b, b_idx = [], -1e9, 0
+portfolio = sorted(list(enumerate(portfolio)), key=lambda x: x[1][1][0])
+selected_portfolio = portfolio[selection][1][0]
 
-for i in range(len(portfolio)):
-  assets, obj = portfolio[i]
-  risk, ret = obj
-  performance = ret / risk
-  if risk <= s:
-    s = risk
-    s_idx = i + 1
-    safe_portfolio = assets
-  if ret >= r:
-    r = ret
-    r_idx = i + 1
-    risky_portfolio = assets
-  if performance >= b:
-    b = performance
-    b_idx = i + 1
-    balanced_portfolio = assets
+print("Selected portfolio {}\n".format(portfolio[selection][0] + 1))
 
-print("Returns generated for these portfolios (risk, bal, safe): {} {} {}".format(r_idx, b_idx, s_idx))
+selected_returns = generatePortfolioReturns(selected_portfolio)
 
-risky_returns = generatePortfolioReturns(risky_portfolio)
-safe_returns = generatePortfolioReturns(safe_portfolio)
-balanced_returns = generatePortfolioReturns(balanced_portfolio)
 
-with open(f'{output_dir}/risky_portfolio.ret', 'w') as output_file:
-  for r in risky_returns:
-    ret = '{:.9f}\n'.format(r)
-    output_file.write(ret)
-
-with open(f'{output_dir}/safe_portfolio.ret', 'w') as output_file:
-  for r in safe_returns:
-    ret = '{:.9f}\n'.format(r)
-    output_file.write(ret)
-
-with open(f'{output_dir}/balanced_portfolio.ret', 'w') as output_file:
-  for r in balanced_returns:
+with open(f'{output_dir}/selected_portfolio.ret', 'w') as output_file:
+  for r in selected_returns:
     ret = '{:.9f}\n'.format(r)
     output_file.write(ret)
