@@ -1,0 +1,7 @@
+FitFuns.MeanCvarFit("Ibovespa/2015/assets_data",0.95) 200 0
+GeneticAlgorithm.GASelection.Tournament 2
+1
+RealChromosome.RealChromosomeType{Float64} FitFuns.buildArgs(FitFuns.MeanVarianceFit)
+GeneticAlgorithm.GAInitialization.InitRandomOne
+GeneticAlgorithm.GACrossover.AritmeticCrossover 0.95
+GeneticAlgorithm.GAMutation.SwapMutation 0.05

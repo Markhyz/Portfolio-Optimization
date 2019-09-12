@@ -10,8 +10,8 @@ BETA="$5"
 
 printf "Optimizing portfolios utilizing the Mean-Variance model\n"
 
-sed -i "1 s:MeanVarianceCardFit(.*) [0-9]*:MeanVarianceCardFit(\"${DIR}/assets_data\",${CARD},${BETA}) ${POP_SIZE}:" FitFuns/MeanVarianceCard
-julia main.jl MeanVarianceCard port MULTI $GENERATIONS 1 1
+sed -i "1 s:MeanVarianceFit(.*) [0-9]*:MeanVarianceFit(\"${DIR}/assets_data\") ${POP_SIZE}:" FitFuns/MeanVariance
+julia main.jl MeanVariance port MULTI $GENERATIONS 1 1
 printf "\nGenerated portfolios (port.ind, port.fit)\n"
 
 mkdir -p "${DIR}/portfolio_data"
