@@ -60,7 +60,6 @@ print("Selected portfolio {}\n".format(portfolio[selection][0] + 1))
 
 selected_returns = generatePortfolioReturns(selected_portfolio)
 
-
 with open(f'{output_dir}/selected_portfolio.ret', 'w') as output_file:
   for r in selected_returns:
     ret = '{:.9f}\n'.format(r)

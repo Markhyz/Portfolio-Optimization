@@ -448,6 +448,71 @@ function buildArgs(::Type{MeanVarianceCardFit}, ::Type{CardinalityChromosome.Car
   return (port_num_assets, port_card, fill(((1, 0.0), (port_num_assets, 1.0)), port_card))
 end
 
+### Mean CVaR Skew Kurtosis Cardinality model
+
+struct MCVaRSkewKurtCardFit <: CardinalityFitType
+  Fitness.@Fitness
+  @PortfolioCommons
+
+  r::Matrix{Float64}
+  skew::Matrix{Float64}
+  kurt::Matrix{Float64}
+  β::Float64
+  k::Integer
+  t::Integer
+
+  function MCvarCardFit(dir::String, k::Integer, β::Float64)
+    let μ, r, skew, kurt, n, t, assets
+      assets, asset_returns = readAssetsReturns(dir)
+      n = length(assets)
+      t = length(asset_returns[1])
+      r = Matrix{Float64}(undef, t, n)
+      for i in eachindex(asset_returns)
+        returns = asset_returns[i]
+        for j in eachindex(returns)
+          r[j, i] = returns[j]
+        end
+      end
+      μ = map(mean, asset_returns)
+      global port_num_assets = n
+      global port_card = k
+      return new((-1, 1), assets, n, μ, r, skew, kurt, 1 - β, k, t)
+    end
+  end
+end
+function (fit::MCvarCardFit)(_x::Tuple{CardinalityChromosome.CardinalityChromosomeType})
+  x = _x[1]
+  total_w = sum(((idx, w),) -> w, x)
+  if abs(total_w - 1.0) > 1e-9
+    println("NANI", total_w)
+    exit()
+  end
+  
+  mean = sum(((idx, w),) -> w * fit.μ[idx], x)
+  returns = Float64[]
+  for i = 1 : fit.t
+    push!(returns, sum(((idx, w),) -> w * fit.r[i, idx], x))
+  end
+  sort!(returns)
+  T = Int(ceil(fit.β * fit.t))
+  cvar = 0.0
+  for i = 1 : T
+    cvar = cvar - returns[i]
+  end
+  cvar = cvar / T 
+  return (-cvar, mean)
+end
+function buildArgs(::Type{MCvarCardFit}, ::Type{CardinalityChromosome.CardinalityChromosomeType})
+  return (port_num_assets, port_card, fill(((1, 0.0), (port_num_assets, 1.0)), port_card))
+end
+function buildArgs(::Type{MCvarCardFit}, ::Type{BinaryChromosome.BinaryChromosomeType})
+  return (port_num_assets, )
+end
+function buildArgs(::Type{MCvarCardFit}, ::Type{RealChromosome.RealChromosomeType})
+  return (port_num_assets, fill((0.0, 1.0), port_num_assets))
+end
+
+
 function output(fit::MarkowitzFitType, sol::Vector{Population.StandardFit{<: Population.IndividualType}}, sol_fitness::Vector{Tuple{Float64, Float64}}, output_name::String)
   sol_assets = [collect(1:fit.n) for i in eachindex(sol)]
   sol_weights = map((((chromo,),),) -> chromo[:], sol)

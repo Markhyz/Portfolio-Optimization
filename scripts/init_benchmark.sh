@@ -20,7 +20,7 @@ printf "\nGenerating benchmark data\n"
 
 mkdir -p "${PERIOD_DIR}/benchmark_data"
 rm -f "${PERIOD_DIR}/benchmark_data/*"
-python "${DIR}/scripts/gen_assets_data.py" "${DIR}/assets/index" "${PERIOD_DIR}/benchmark_data" "${START_YEAR}-01-01" "${END_YEAR}-12-31"
+python "${DIR}/scripts/gen_asset_data.py" "${DIR}/assets/index" "${PERIOD_DIR}/benchmark_data" "${START_YEAR}-01-01" "${END_YEAR}-12-31"
 rm -f "${PERIOD_DIR}/benchmark_data/^BVSP.in"
 printf "Generated ibovespa data (^BVSP.inp)\n"
 
