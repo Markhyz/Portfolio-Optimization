@@ -20,7 +20,7 @@ printf "Generating portfolio returns\n"
 mkdir -p "${PERIOD_DIR}/portfolio_data"
 
 python "${DIR}/scripts/gen_portfolio_returns.py" \
-       "${PORTFOLIO_DIR}/portfolio_data/port.ind" "${PORTFOLIO_DIR}/portfolio_data/port.fit" \
+       "${PORTFOLIO_DIR}/portfolio_data/${NAME}/port.ind" "${PORTFOLIO_DIR}/portfolio_data/${NAME}/port.fit" \
        "${PERIOD_DIR}/assets_data" "${PERIOD_DIR}/portfolio_data" "${START_YEAR}-01-01" "${END_YEAR}-12-31"
 
 mkdir -p "${PERIOD_DIR}/plot_data/${NAME}"

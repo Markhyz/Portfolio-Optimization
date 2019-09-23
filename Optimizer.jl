@@ -48,6 +48,7 @@ function optimize(input_name, output_name, opt_alg, it, log)
   if opt_alg == "SINGLE"
     best_fit, mean_fit = GeneticAlgorithm.evolveSO!(ga, it, log)
     plot(1:it, [best_fit, mean_fit], xlims=(1, it), label=["Best" "Mean"], xlabel="Generation", ylabel="Fitness", legend=:bottomright)
+    savefig("FitFuns/$(input_name)_fitness.png")
     open("$(output_name).best", "w") do out_file
       for fit in best_fit
         @printf(out_file, "%.9f\n", fit)
@@ -61,12 +62,14 @@ function optimize(input_name, output_name, opt_alg, it, log)
   elseif opt_alg == "MULTI"
     best_solutions = GeneticAlgorithm.evolveNSGA2!(ga, it, log)
     sol_fitness = [x .* Fitness.getDirection(fit_fun) for x in getindex.(best_solutions, 2)]
-    scatter(sol_fitness, label=["Frontier"], markersize=1)
+    if Fitness.getSize(fit_fun) < 4
+      scatter(sol_fitness, label=["Frontier"], markersize=1)
+      savefig("FitFuns/$(input_name)_fitness.png")
+    end
     if applicable(FitFuns.output, fit_fun, best_solutions, sol_fitness, output_name)
       FitFuns.output(fit_fun, best_solutions, sol_fitness, output_name)
     end
   end
-  savefig("FitFuns/$(input_name)_fitness.png")
 end
 
 end

@@ -23,8 +23,8 @@ portfolio_obj = []
 
 with open(portfolio_fit) as fit_data:
   for line in fit_data:
-    f1, f2 = [float(value) for value in line.split()]
-    portfolio_obj.append((f1, f2))
+    obj = [float(value) for value in line.split()]
+    portfolio_obj.append(obj)
 
 portfolio = list(zip(portfolio_assets, portfolio_obj))
 
@@ -53,14 +53,14 @@ def generatePortfolioReturns(assets):
   return returns
 
 risky_portfolio, r, r_idx = [], -1e9, 0
-safe_portfolio, s, s_idx = [], 1e9, 0
+safe_portfolio, s, s_idx = [], -1e9, 0
 balanced_portfolio, b, b_idx = [], -1e9, 0
 
 for i in range(len(portfolio)):
   assets, obj = portfolio[i]
-  risk, ret = obj
-  performance = ret / risk
-  if risk <= s:
+  ret, risk = obj[0], obj[1]
+  performance = ret * risk
+  if risk >= s:
     s = risk
     s_idx = i + 1
     safe_portfolio = assets
@@ -68,10 +68,15 @@ for i in range(len(portfolio)):
     r = ret
     r_idx = i + 1
     risky_portfolio = assets
-  if performance >= b:
-    b = performance
-    b_idx = i + 1
-    balanced_portfolio = assets
+  # if performance >= b:
+  #   b = performance
+  #   b_idx = i + 1
+  #   balanced_portfolio = assets
+
+portfolio = sorted(list(enumerate(portfolio)), key=lambda x: x[1][1][0])
+b_idx = portfolio[len(portfolio) // 2][0] + 1
+balanced_portfolio = portfolio[b_idx][1][0]
+print(balanced_portfolio)
 
 print("Returns generated for these portfolios (risk, bal, safe): {} {} {}".format(r_idx, b_idx, s_idx))
 

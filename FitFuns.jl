@@ -204,9 +204,6 @@ end
   μ::Vector{Float64}
 end
 
-abstract type MarkowitzFitType <: Fitness.AbstractFitness{2} end
-abstract type CardinalityFitType <: Fitness.AbstractFitness{2} end
-
 port_num_assets = -1
 port_card = -1
 
@@ -235,7 +232,7 @@ end
 
 ### Mean Variance model
 
-struct MeanVarianceFit <: MarkowitzFitType
+struct MeanVarianceFit <: Fitness.AbstractFitness{2}
   Fitness.@Fitness
   @PortfolioCommons
 
@@ -258,7 +255,7 @@ struct MeanVarianceFit <: MarkowitzFitType
         end
       end
       global port_num_assets = n
-      return new((-1, 1), assets, n, μ, σ)
+      return new((1, -1), assets, n, μ, σ)
     end
   end
 end
@@ -276,7 +273,7 @@ function (fit::MeanVarianceFit)(_x::Tuple{RealChromosome.RealChromosomeType})
   for i = 1:chromo_num, j = 1:chromo_num
     var = var + n_x[i] * n_x[j] * fit.σ[i, j]
   end
-  return (-var, mean)
+  return (mean, -var)
 end
 function buildArgs(::Type{MeanVarianceFit})
   return (port_num_assets, fill((0.0, 1.0), port_num_assets))
@@ -284,7 +281,7 @@ end
 
 ### Mean CVaR model
 
-struct MeanCvarFit <: MarkowitzFitType
+struct MeanCvarFit <: Fitness.AbstractFitness{2}
   Fitness.@Fitness
   @PortfolioCommons
 
@@ -306,7 +303,7 @@ struct MeanCvarFit <: MarkowitzFitType
       end
       μ = map(mean, asset_returns)
       global port_num_assets = n
-      return new((-1, 1), assets, n, μ, r, 1 - β, t)
+      return new((1, 1), assets, n, μ, r, 1 - β, t)
     end
   end
 end
@@ -325,10 +322,10 @@ function (fit::MeanCvarFit)(_x::Tuple{RealChromosome.RealChromosomeType})
   T = Int(ceil(fit.β * fit.t))
   cvar = 0.0
   for i = 1 : T
-    cvar = cvar - returns[i]
+    cvar = cvar + returns[i]
   end
-  cvar = cvar / T 
-  return (-cvar, mean)
+  cvar = cvar / T
+  return (mean, cvar)
 end
 function buildArgs(::Type{MeanCvarFit})
   return (port_num_assets, fill((0.0, 1.0), port_num_assets))
@@ -336,7 +333,7 @@ end
 
 ### Mean CVaR Cardinality model
 
-struct MCvarCardFit <: CardinalityFitType
+struct MCvarCardFit <: Fitness.AbstractFitness{2}
   Fitness.@Fitness
   @PortfolioCommons
 
@@ -360,7 +357,7 @@ struct MCvarCardFit <: CardinalityFitType
       μ = map(mean, asset_returns)
       global port_num_assets = n
       global port_card = k
-      return new((-1, 1), assets, n, μ, r, 1 - β, k, t)
+      return new((1, 1), assets, n, μ, r, 1 - β, k, t)
     end
   end
 end
@@ -381,10 +378,10 @@ function (fit::MCvarCardFit)(_x::Tuple{CardinalityChromosome.CardinalityChromoso
   T = Int(ceil(fit.β * fit.t))
   cvar = 0.0
   for i = 1 : T
-    cvar = cvar - returns[i]
+    cvar = cvar + returns[i]
   end
   cvar = cvar / T 
-  return (-cvar, mean)
+  return (mean, cvar)
 end
 function buildArgs(::Type{MCvarCardFit}, ::Type{CardinalityChromosome.CardinalityChromosomeType})
   return (port_num_assets, port_card, fill(((1, 0.0), (port_num_assets, 1.0)), port_card))
@@ -398,7 +395,7 @@ end
 
 ### Mean Variance Cardinality model
 
-struct MeanVarianceCardFit <: CardinalityFitType
+struct MeanVarianceCardFit <: Fitness.AbstractFitness{2}
   Fitness.@Fitness
   @PortfolioCommons
 
@@ -423,7 +420,7 @@ struct MeanVarianceCardFit <: CardinalityFitType
       end
       global port_num_assets = n
       global port_card = k
-      return new((-1, 1), assets, n, μ, σ, k)
+      return new((1, -1), assets, n, μ, σ, k)
     end
   end
 end
@@ -442,7 +439,7 @@ function (fit::MeanVarianceCardFit)(_x::Tuple{CardinalityChromosome.CardinalityC
       variance = variance + fit.σ[asset, asset2] * weight * weight2
     end
   end
-  return (-variance, mean)
+  return (mean, -variance)
 end
 function buildArgs(::Type{MeanVarianceCardFit}, ::Type{CardinalityChromosome.CardinalityChromosomeType})
   return (port_num_assets, port_card, fill(((1, 0.0), (port_num_assets, 1.0)), port_card))
@@ -450,37 +447,54 @@ end
 
 ### Mean CVaR Skew Kurtosis Cardinality model
 
-struct MCVaRSkewKurtCardFit <: CardinalityFitType
+struct MCVaRSkewKurtCardFit <: Fitness.AbstractFitness{4}
   Fitness.@Fitness
   @PortfolioCommons
 
   r::Matrix{Float64}
   skew::Matrix{Float64}
-  kurt::Matrix{Float64}
+  kurt::Array{Float64, 3}
   β::Float64
   k::Integer
   t::Integer
 
-  function MCvarCardFit(dir::String, k::Integer, β::Float64)
+  function MCVaRSkewKurtCardFit(dir::String, k::Integer, β::Float64)
     let μ, r, skew, kurt, n, t, assets
       assets, asset_returns = readAssetsReturns(dir)
       n = length(assets)
       t = length(asset_returns[1])
       r = Matrix{Float64}(undef, t, n)
+      skew = Matrix{Float64}(undef, n, n)
+      kurt = Array{Float64, 3}(undef, n, n, 2)
+      μ = map(mean, asset_returns)
       for i in eachindex(asset_returns)
         returns = asset_returns[i]
         for j in eachindex(returns)
           r[j, i] = returns[j]
         end
       end
-      μ = map(mean, asset_returns)
+      for i = 1 : n, j = 1 : n
+        total_skew = 0.0
+        total_kurt = 0.0
+        total_middle_kurt = 0.0
+        for h = 1 : t
+          x_i = (μ[i] - asset_returns[i][h])
+          x_j = (μ[j] - asset_returns[j][h])
+          total_skew = total_skew + x_i * x_i * x_j
+          total_kurt = total_kurt + x_i * x_i * x_i * x_j
+          total_middle_kurt = total_middle_kurt + x_i * x_i * x_j * x_j
+        end
+        skew[i, j] = total_skew / (t - 1)
+        kurt[i, j, 1] = total_kurt / (t - 1)
+        kurt[i, j, 2] = total_middle_kurt / (t - 1)
+      end
       global port_num_assets = n
       global port_card = k
-      return new((-1, 1), assets, n, μ, r, skew, kurt, 1 - β, k, t)
+      return new((1, 1, 1, -1), assets, n, μ, r, skew, kurt, 1 - β, k, t)
     end
   end
 end
-function (fit::MCvarCardFit)(_x::Tuple{CardinalityChromosome.CardinalityChromosomeType})
+function (fit::MCVaRSkewKurtCardFit)(_x::Tuple{CardinalityChromosome.CardinalityChromosomeType})
   x = _x[1]
   total_w = sum(((idx, w),) -> w, x)
   if abs(total_w - 1.0) > 1e-9
@@ -497,36 +511,62 @@ function (fit::MCvarCardFit)(_x::Tuple{CardinalityChromosome.CardinalityChromoso
   T = Int(ceil(fit.β * fit.t))
   cvar = 0.0
   for i = 1 : T
-    cvar = cvar - returns[i]
+    cvar = cvar + returns[i]
   end
-  cvar = cvar / T 
-  return (-cvar, mean)
+  cvar = cvar / T
+  skewness = 0.0
+  for i in eachindex(x)
+    asset, weight = x[i]
+    skewness = skewness + (weight ^ 3) * (fit.skew[i, i] ^ 3)
+    for j in eachindex(x)
+      if i == j
+        continue
+      end
+      asset2, weight2 = x[j]
+      s_i = fit.skew[i, j]
+      s_j = fit.skew[j, i]
+      skewness = skewness + 3 * ((weight ^ 2) * weight2 * s_i + weight * (weight2 ^ 2) * s_j)
+    end
+  end
+  kurtosis = 0.0
+  for i in eachindex(x)
+    asset, weight = x[i]
+    kurtosis = kurtosis + (weight ^ 4) * (fit.kurt[i, i, 1] ^ 4)
+    for j in eachindex(x)
+      if i == j
+        continue
+      end
+      asset2, weight2 = x[j]
+      k_i = fit.kurt[i, j, 1]
+      k_j = fit.kurt[j, i, 1]
+      kurtosis = kurtosis + 4 * ((weight ^ 3) * weight2 * k_i + weight * (weight2 ^ 3) * k_j)
+      k_ij = fit.kurt[i, j, 2]
+      kurtosis = kurtosis + 6 * ((weight ^ 2) * (weight2 ^ 2) * k_ij)
+    end
+  end
+  return (mean, cvar, skewness, -kurtosis)
 end
-function buildArgs(::Type{MCvarCardFit}, ::Type{CardinalityChromosome.CardinalityChromosomeType})
+function buildArgs(::Type{MCVaRSkewKurtCardFit}, ::Type{CardinalityChromosome.CardinalityChromosomeType})
   return (port_num_assets, port_card, fill(((1, 0.0), (port_num_assets, 1.0)), port_card))
 end
-function buildArgs(::Type{MCvarCardFit}, ::Type{BinaryChromosome.BinaryChromosomeType})
-  return (port_num_assets, )
-end
-function buildArgs(::Type{MCvarCardFit}, ::Type{RealChromosome.RealChromosomeType})
-  return (port_num_assets, fill((0.0, 1.0), port_num_assets))
-end
 
+MarkowitzFitType = Union{MeanVarianceFit, MeanCvarFit}
+CardinalityFitType = Union{MeanVarianceCardFit, MCvarCardFit, MCVaRSkewKurtCardFit}
 
-function output(fit::MarkowitzFitType, sol::Vector{Population.StandardFit{<: Population.IndividualType}}, sol_fitness::Vector{Tuple{Float64, Float64}}, output_name::String)
+function output(fit::MarkowitzFitType, sol::Vector{Population.StandardFit{<: Population.IndividualType}}, sol_fitness::Vector{NTuple{N, Float64}}, output_name::String) where N
   sol_assets = [collect(1:fit.n) for i in eachindex(sol)]
   sol_weights = map((((chromo,),),) -> chromo[:], sol)
   outputPortfolio(fit.assets, length(sol), sol_assets, sol_weights, sol_fitness, output_name)
 end
 
-function output(fit::CardinalityFitType, sol::Vector{Population.StandardFit{<: Population.IndividualType}}, sol_fitness::Vector{Tuple{Float64, Float64}}, output_name::String)
+function output(fit::CardinalityFitType, sol::Vector{Population.StandardFit{<: Population.IndividualType}}, sol_fitness::Vector{NTuple{N, Float64}}, output_name::String) where N
   sol_assets = map((((chromo,),),) -> getindex.(chromo, 1), sol)
   sol_weights = map((((chromo,),),) -> getindex.(chromo, 2), sol)
   outputPortfolio(fit.assets, length(sol), sol_assets, sol_weights, sol_fitness, output_name)
 end
 
 function outputPortfolio(assets::Vector{String}, num_sol::Integer, sol_assets::Vector{Vector{Int64}}, sol_weights::Vector{Vector{Float64}},
-                         sol_fitness::Vector{Tuple{Float64, Float64}}, output_name::String)
+                         sol_fitness::Vector{NTuple{N, Float64}}, output_name::String) where N
   open("$(output_name).ind", "w") do out_file
     for i = 1 : num_sol
       for asset in sol_assets[i]
@@ -542,7 +582,7 @@ function outputPortfolio(assets::Vector{String}, num_sol::Integer, sol_assets::V
   open("$(output_name).fit", "w") do out_file
     for i = 1 : num_sol
       for fit in sol_fitness[i]
-        @printf(out_file, "%.9f ", fit)
+        @printf(out_file, "%.15f ", fit)
       end
       println(out_file)
     end
