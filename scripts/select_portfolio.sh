@@ -19,7 +19,7 @@ fi
 printf "Generating selected risk rate portfolio return\n"
 
 python "${DIR}/scripts/select_portfolio_return.py" \
-       "${PORTFOLIO_DIR}/portfolio_data/port.ind" "${PORTFOLIO_DIR}/portfolio_data/port.fit" $RISK_RATE \
+       "${PORTFOLIO_DIR}/portfolio_data/${NAME}/port.ind" "${PORTFOLIO_DIR}/portfolio_data/${NAME}/port.fit" $RISK_RATE \
        "${PERIOD_DIR}/assets_data" "${PERIOD_DIR}/portfolio_data" "${START_YEAR}-01-01" "${END_YEAR}-12-31"
 
 mkdir -p "${PORTFOLIO_DIR}/plot_data"

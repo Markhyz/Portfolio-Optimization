@@ -1,4 +1,4 @@
-FitFuns.MCVaRSkewKurtCardFit("Ibovespa/2015/assets_data",10,0.95) 500 0
+FitFuns.MCVaRSkewKurtCardFit("Ibovespa/2015/assets_data",10,0.95) 300 0
 GeneticAlgorithm.GASelection.Tournament 2
 1
 CardinalityChromosome.CardinalityChromosomeType FitFuns.buildArgs(FitFuns.MCVaRSkewKurtCardFit,CardinalityChromosome.CardinalityChromosomeType)

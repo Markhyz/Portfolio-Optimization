@@ -255,7 +255,7 @@ struct MeanVarianceFit <: Fitness.AbstractFitness{2}
         end
       end
       global port_num_assets = n
-      return new((1, -1), assets, n, μ, σ)
+      return new((1, 1), assets, n, μ, σ)
     end
   end
 end
@@ -420,7 +420,7 @@ struct MeanVarianceCardFit <: Fitness.AbstractFitness{2}
       end
       global port_num_assets = n
       global port_card = k
-      return new((1, -1), assets, n, μ, σ, k)
+      return new((1, 1), assets, n, μ, σ, k)
     end
   end
 end
